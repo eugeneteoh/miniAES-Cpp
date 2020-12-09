@@ -45,8 +45,7 @@ matrix MiniAES::blockToArray(std::string s) {
     // uses masks to extract high/low nibble (bit shift, &)
     // smallest data type in C++ is 1 byte (8 bit) so uint8_t gives the most efficient output
     matrix vals;
-    for (unsigned i = 0; i < 2; i++) {
-        char tempChar = s[i];
+    for (auto i = 0; i < 2; i++) {
         vals[0][i] = s[i] >> 4; // high nibble
         vals[1][i] = s[i] & 15; // low nibble
     }
@@ -79,6 +78,14 @@ matrix MiniAES::mixColumn(matrix block) {
     return res;
 }
 
+matrix MiniAES::keyAddition(matrix block, matrix rkey) {
+    for (auto i = 0; i < 2; i++)
+        for (auto j = 0; j < 2; j++)
+            block[i][j] = gadd(block[i][j], rkey[i][j]);
+
+    return block;
+}
+
 std::string MiniAES::encrypt (std::string pt) { 
     // block cipher, each block has 16 bits / 2 bytes
     for (auto i = 0; i < pt.length(); i += 2) {
@@ -87,20 +94,11 @@ std::string MiniAES::encrypt (std::string pt) {
         auto sub = this->nibbleSub(block);
         auto shift = this->shiftRow(block);
         auto mix = this->mixColumn(block);
+        auto add = this->keyAddition(block, sub);
     }
 
     return "hi";
 }
-
-
-void convertToASCII(std::string s)
-{
-    for (int i = 0; i < s.length(); i++)
-    {
-        std::cout << (int)s[i]<< std::endl;
-    }
-}
-
 
  
 int main() {

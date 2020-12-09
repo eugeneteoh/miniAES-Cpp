@@ -19,6 +19,7 @@ class MiniAES {
         matrix nibbleSub(matrix);
         matrix shiftRow(matrix);
         matrix mixColumn(matrix);
+        matrix keyAddition(matrix, matrix);
         std::string encrypt(std::string);
 };
 
