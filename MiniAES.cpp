@@ -10,9 +10,13 @@ uint8_t gadd(uint8_t a, uint8_t b) {
 }
 
 uint8_t gmul(uint8_t a, uint8_t b) {
-    // GF(2^4) multiplication
-    // using modified version of russian peasant algorithm
-    // it also uses branchless programming to prevent timing attacks
+    /*
+    GF(2^4) multiplication
+    using modified version of russian peasant algorithm
+    it also uses branchless programming to prevent timing attacks
+
+    reference: https://en.wikipedia.org/wiki/Finite_field_arithmetic
+    */
     uint8_t p = 0;
     for (auto i = 0; i < 4; i++) {
         p ^= -(b & 1) & a;
@@ -42,6 +46,7 @@ matrix MiniAES::blockToArray(std::string s) {
     // smallest data type in C++ is 1 byte (8 bit) so uint8_t gives the most efficient output
     matrix vals;
     for (unsigned i = 0; i < 2; i++) {
+        char tempChar = s[i];
         vals[0][i] = s[i] >> 4; // high nibble
         vals[1][i] = s[i] & 15; // low nibble
     }
@@ -64,25 +69,42 @@ matrix MiniAES::shiftRow(matrix block) {
     return block;
 }
 
-// matrix MiniAES::mixColumn(matrix block) {
-    
-// }
+matrix MiniAES::mixColumn(matrix block) {
+    matrix res;
+    res[0][0] = gadd(gmul(3, block[0][0]), gmul(2, block[1][0])); // d0
+    res[1][0] = gadd(gmul(2, block[0][0]), gmul(3, block[1][0])); // d1
+    res[0][1] = gadd(gmul(3, block[0][1]), gmul(2, block[1][1])); // d2
+    res[1][1] = gadd(gmul(2, block[0][1]), gmul(3, block[1][1])); // d3
+
+    return res;
+}
 
 std::string MiniAES::encrypt (std::string pt) { 
     // block cipher, each block has 16 bits / 2 bytes
     for (auto i = 0; i < pt.length(); i += 2) {
+        auto str = pt.substr(i, 2);
         auto block = this->blockToArray(pt.substr(i, 2));
         auto sub = this->nibbleSub(block);
         auto shift = this->shiftRow(block);
-        auto test = gmul(15, 14);
+        auto mix = this->mixColumn(block);
     }
 
     return "hi";
 }
 
+
+void convertToASCII(std::string s)
+{
+    for (int i = 0; i < s.length(); i++)
+    {
+        std::cout << (int)s[i]<< std::endl;
+    }
+}
+
+
  
 int main() {
-    std::string pt ("hiwfqwef"); // plain text
+    std::string pt ("hi cfqwef"); // plain text
     std::string key (""); // secret key
 
     // for (unsigned i = 0; i < pt.length(); i += 2) {
@@ -93,3 +115,4 @@ int main() {
     std::cout << test.encrypt(pt);
 
 }
+
