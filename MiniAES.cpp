@@ -40,6 +40,29 @@ std::unordered_map<uint8_t, uint8_t> MiniAES::s_box = {
     {0b0111, 0b1000}, {0b1111, 0b0111}
 };
 
+MiniAES::MiniAES(uint16_t k) {
+    setKey(k);
+}
+
+void MiniAES::setKey(uint16_t k) {
+    key = k;
+
+    // round key 0
+    rkey[0][0][0] = key >> 12;
+    rkey[0][1][0] = (key >> 8) & 15;
+    rkey[0][0][1] = (key >> 4) & 15;
+    rkey[0][1][1] = key & 15;
+
+    // round key 1 and 2
+    uint8_t rcon[2] = {0b0001, 0b0010};
+    for (auto round = 1; round < 3; round++) {
+        rkey[round][0][0] = gadd( gadd(rkey[round-1][0][0], s_box[rkey[round-1][1][1]]), rcon[round-1] );
+        rkey[round][1][0] = gadd( rkey[round-1][1][0], rkey[round][0][0] );
+        rkey[round][0][1] = gadd( rkey[round-1][0][1], rkey[round][1][0] );
+        rkey[round][1][1] = gadd( rkey[round-1][1][1], rkey[round][0][1] );
+    }
+}
+
 matrix MiniAES::blockToArray(std::string s) {
     // converts 16 bit string to 2x2 nibble array
     // uses masks to extract high/low nibble (bit shift, &)
@@ -86,6 +109,16 @@ matrix MiniAES::keyAddition(matrix block, matrix rkey) {
     return block;
 }
 
+// matrix MiniAES::keySchedule(matrix rkey, uint8_t round) {
+//     auto res = rkey;
+//     switch(round) {
+//         case 1: {
+//             res[0][0] = gadd(gadd(rkey[0][0], s_box[rkey[1][1]]), );
+//         }
+//     }
+//     return rkey;
+// }
+
 std::string MiniAES::encrypt (std::string pt) { 
     // block cipher, each block has 16 bits / 2 bytes
     for (auto i = 0; i < pt.length(); i += 2) {
@@ -103,7 +136,7 @@ std::string MiniAES::encrypt (std::string pt) {
  
 int main() {
     std::string pt ("hi cfqwef"); // plain text
-    std::string key (""); // secret key
+    uint16_t key = 0xffff; // secret key
 
     // for (unsigned i = 0; i < pt.length(); i += 2) {
     //     std::cout << pt.substr(i, 2) << std::endl;

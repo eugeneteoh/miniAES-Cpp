@@ -7,19 +7,19 @@ typedef std::array< std::array<uint8_t, 2>, 2 > matrix;
 
 class MiniAES {
     private:
-        std::string key;
-    public:
         static std::unordered_map<uint8_t, uint8_t> s_box;      // S-box implementation using hash map
-        MiniAES() {};
-        MiniAES(std::string k) : key(k) {};
-        void setKey (std::string k) {
-            key = k;
-        };
+        uint16_t key;
+        std::array< matrix, 3 > rkey;
         matrix blockToArray(std::string);
         matrix nibbleSub(matrix);
         matrix shiftRow(matrix);
         matrix mixColumn(matrix);
         matrix keyAddition(matrix, matrix);
+        matrix keySchedule(matrix, uint8_t);
+    public:
+        MiniAES() {};
+        MiniAES(uint16_t k);
+        void setKey (uint16_t k);
         std::string encrypt(std::string);
 };
 
