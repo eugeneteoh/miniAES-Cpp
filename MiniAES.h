@@ -16,10 +16,8 @@ class MiniAES {
         static std::unordered_map<uint8_t, uint8_t> inverse_s_box; // inverse S-box
         uint16_t key;
         std::array< matrix, 3 > rkey;
-        matrix strToMatrix(std::string);
-        std::string matrixToStr(matrix);
-        matrix bitsetToMatrix(std::bitset<16>);
-        std::bitset<16> matrixToBitset(matrix);
+        matrix uint16ToMatrix(uint16_t);
+        uint16_t matrixToUInt16(matrix);
         matrix nibbleSub(matrix, bool);
         matrix shiftRow(matrix);
         matrix mixColumn(matrix);
@@ -28,9 +26,8 @@ class MiniAES {
         MiniAES() {};
         MiniAES(uint16_t k);
         void setKey (uint16_t k);
-        std::string encrypt(std::string);
-        std::vector< std::bitset<16> > encrypt(std::vector< std::bitset<16> >);
-        std::vector< std::bitset<16> > decrypt(std::vector< std::bitset<16> >);
+        std::vector< uint16_t > encrypt(std::vector< uint16_t >);
+        std::vector< uint16_t > decrypt(std::vector< uint16_t >);
 };
 
 uint8_t gadd(uint8_t, uint8_t);
