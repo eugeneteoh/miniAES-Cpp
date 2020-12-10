@@ -42,6 +42,8 @@ std::unordered_map<uint8_t, uint8_t> MiniAES::s_box = {
     {0b0111, 0b1000}, {0b1111, 0b0111}
 };
 
+std::unordered_map<uint8_t, uint8_t> MiniAES::inverse_s_box = inverse_map(s_box);
+
 MiniAES::MiniAES(uint16_t k) {
     setKey(k);
 }
@@ -110,10 +112,11 @@ std::bitset<16> MiniAES::matrixToBitset(matrix block) {
     return bitset;
 } 
 
-matrix MiniAES::nibbleSub (matrix block) {
+matrix MiniAES::nibbleSub (matrix block, bool inverse = false) {
+    auto lookup = inverse ? inverse_s_box : s_box;
     for (auto i = 0; i < block.max_size(); i++) {
         for (auto j = 0; j < block[i].max_size(); j++)
-            block[i][j] = MiniAES::s_box[block[i][j]];
+            block[i][j] = lookup[block[i][j]];
     }
 
     return block;
@@ -196,6 +199,29 @@ std::vector< std::bitset<16> > MiniAES::encrypt(std::vector< std::bitset<16> > p
     return ct;
 }
 
+std::vector< std::bitset<16> > MiniAES::decrypt(std::vector< std::bitset<16> > ct) {
+    // decrypt from bitset vector to bitset vector
+    std::vector < std::bitset<16> > pt;
+
+    for (auto i = 0; i < ct.size(); i++) {
+        auto block = bitsetToMatrix(ct[i]);
+
+        block = keyAddition(block, rkey[2]);
+        block = shiftRow(block);
+        block = nibbleSub(block, true);
+
+        block = keyAddition(block, rkey[1]);
+        block = mixColumn(block);
+        block = shiftRow(block);
+        block = nibbleSub(block, true);
+
+        block = keyAddition(block, rkey[0]);
+
+        pt.push_back(matrixToBitset(block));
+    }
+
+    return pt;
+}
  
 int main() {
     std::vector< std::bitset<16> > pt = {0b1111, 0b1001110001100011};
@@ -209,5 +235,7 @@ int main() {
     std::vector < std::string > test_str;
     for (auto i = 0; i < test_encrypt.size(); i++)
         test_str.push_back(test_encrypt[i].to_string());
+
+    auto test_decrypt = test.decrypt(test_encrypt)[1].to_string();
 }
 
