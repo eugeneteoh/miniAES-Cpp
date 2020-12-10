@@ -1,5 +1,4 @@
 #include "MiniAES.h"
-#include <iostream>
 #include <string>
 #include <array>
 #include <unordered_map>
@@ -179,17 +178,3 @@ std::vector< uint16_t > MiniAES::decrypt(std::vector< uint16_t > ct) {
     return pt;
 }
  
-int main() {
-    std::vector< uint16_t > pt = {0b1111, 0b1001110001100011};
-    uint16_t key = 0b1100001111110000; // secret key
-
-    // for (unsigned i = 0; i < pt.length(); i += 2) {
-    //     std::cout << pt.substr(i, 2) << std::endl;
-    // }
-    MiniAES test(key);
-    auto test_encrypt = test.encrypt(pt);
-    std::vector < std::string > test_str;
-
-    auto test_decrypt = test.decrypt(test_encrypt);
-}
-
