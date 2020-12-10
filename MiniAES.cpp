@@ -3,6 +3,8 @@
 #include <string>
 #include <array>
 #include <unordered_map>
+#include <vector>
+#include <bitset>
 
 uint8_t gadd(uint8_t a, uint8_t b) {
     // GF(2^4) addition
@@ -63,10 +65,14 @@ void MiniAES::setKey(uint16_t k) {
     }
 }
 
-matrix MiniAES::blockToArray(std::string s) {
-    // converts 16 bit string to 2x2 nibble array
-    // uses masks to extract high/low nibble (bit shift, &)
-    // smallest data type in C++ is 1 byte (8 bit) so uint8_t gives the most efficient output
+matrix MiniAES::strToMatrix(std::string s) {
+    /* 
+    converts 16 bit string to 2x2 nibble array
+    below is the index mapping the one on the paper
+    [0][0]: 0, [1][0]: 1, [0][1]: 2, [1][1]: 3
+    uses masks to extract high/low nibble (bit shift, &)
+    smallest data type in C++ is 1 byte (8 bit) so uint8_t gives the most efficient output
+    */
     matrix vals;
     for (auto i = 0; i < 2; i++) {
         vals[0][i] = s[i] >> 4; // high nibble
@@ -74,6 +80,35 @@ matrix MiniAES::blockToArray(std::string s) {
     }
     return vals;
 }
+
+std::string MiniAES::matrixToStr(matrix block) {
+    std::string substr;
+    for (auto i = 0; i < 2; i++) {
+        substr += (block[0][i] << 4) | block[1][i];
+    }
+    return substr;
+}
+
+matrix MiniAES::bitsetToMatrix(std::bitset<16> block) {
+    matrix res;
+    res[0][0] = block.to_ulong() >> 12;
+    res[1][0] = (block.to_ulong() >> 8) & 15;
+    res[0][1] = (block.to_ulong() >> 4) & 15;
+    res[1][1] = block.to_ulong() & 15;
+
+    return res;
+}
+
+std::bitset<16> MiniAES::matrixToBitset(matrix block) {
+    std::bitset<16> bitset;
+    for (auto j = 0; j < 2; j++) {
+        for (auto i = 0; i < 2; i++) {
+            bitset <<= 4;
+            bitset |= block[i][j];
+        }
+    }
+    return bitset;
+} 
 
 matrix MiniAES::nibbleSub (matrix block) {
     for (auto i = 0; i < block.max_size(); i++) {
@@ -101,49 +136,78 @@ matrix MiniAES::mixColumn(matrix block) {
     return res;
 }
 
-matrix MiniAES::keyAddition(matrix block, matrix rkey) {
+matrix MiniAES::keyAddition(matrix block, matrix curr_rkey) {
     for (auto i = 0; i < 2; i++)
         for (auto j = 0; j < 2; j++)
-            block[i][j] = gadd(block[i][j], rkey[i][j]);
+            block[i][j] = gadd(block[i][j], curr_rkey[i][j]);
 
     return block;
 }
 
-// matrix MiniAES::keySchedule(matrix rkey, uint8_t round) {
-//     auto res = rkey;
-//     switch(round) {
-//         case 1: {
-//             res[0][0] = gadd(gadd(rkey[0][0], s_box[rkey[1][1]]), );
-//         }
-//     }
-//     return rkey;
-// }
-
 std::string MiniAES::encrypt (std::string pt) { 
+    // encrypt from string to string
+    std::string ct;
     // block cipher, each block has 16 bits / 2 bytes
     for (auto i = 0; i < pt.length(); i += 2) {
-        auto str = pt.substr(i, 2);
-        auto block = this->blockToArray(pt.substr(i, 2));
-        auto sub = this->nibbleSub(block);
-        auto shift = this->shiftRow(block);
-        auto mix = this->mixColumn(block);
-        auto add = this->keyAddition(block, sub);
+        auto block = strToMatrix(pt.substr(i, 2));
+
+        // round 0
+        block = keyAddition(block, rkey[0]);
+        // round 1
+        block = nibbleSub(block);
+        block = shiftRow(block);
+        block = mixColumn(block);
+        block = keyAddition(block, rkey[1]);
+        // round 2
+        block = nibbleSub(block);
+        block = shiftRow(block);
+        block = keyAddition(block, rkey[2]);
+
+        // add to ct
+        ct += matrixToStr(block);
     }
 
-    return "hi";
+    return ct;
+}
+
+std::vector< std::bitset<16> > MiniAES::encrypt(std::vector< std::bitset<16> > pt) {
+    // encrypt from bitset vector to bitset vector
+    std::vector < std::bitset<16> > ct;
+
+    for (auto i = 0; i < pt.size(); i++) {
+        auto block = bitsetToMatrix(pt[i]);
+
+        // round 0
+        block = keyAddition(block, rkey[0]);
+        // round 1
+        block = nibbleSub(block);
+        block = shiftRow(block);
+        block = mixColumn(block);
+        block = keyAddition(block, rkey[1]);
+        // round 2
+        block = nibbleSub(block);
+        block = shiftRow(block);
+        block = keyAddition(block, rkey[2]);
+
+        // add to ct
+        ct.push_back(matrixToBitset(block));
+    }
+
+    return ct;
 }
 
  
 int main() {
-    std::string pt ("hi cfqwef"); // plain text
-    uint16_t key = 0xffff; // secret key
+    std::vector< std::bitset<16> > pt = {0b1111, 0b1001110001100011};
+    uint16_t key = 0b1100001111110000; // secret key
 
     // for (unsigned i = 0; i < pt.length(); i += 2) {
     //     std::cout << pt.substr(i, 2) << std::endl;
     // }
-
     MiniAES test(key);
-    std::cout << test.encrypt(pt);
-
+    auto test_encrypt = test.encrypt(pt);
+    std::vector < std::string > test_str;
+    for (auto i = 0; i < test_encrypt.size(); i++)
+        test_str.push_back(test_encrypt[i].to_string());
 }
 
