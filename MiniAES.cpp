@@ -1,4 +1,5 @@
 #include "MiniAES.h"
+#include <iostream>
 #include <string>
 #include <array>
 #include <unordered_map>

@@ -1,0 +1,11 @@
+Inputs: a, b = multiplicands containing binary notation of the polynomial(e.g. x^3 + x + 1 = 0b1011).
+
+p = 0
+for i in range(4 bits):
+    1. If the rightmost bit of b == 1, p XOR a (polynomial addition)
+    2. b >> 1 (divides the polynomial by x), discarding the x^0 term.
+    3. carry = 1 if leftmost bit of a == 1, else 0
+    4. a << 1 (multiplies the polynomial by x, but we still need to take account of carry which represented the coefficient of x^3)
+    5. If carry == 1, XOR a with 0b0011. 0b0011 corresponds to the irreducible polynomial (x^4 + x + 1) with the high term eliminated.
+
+Result: p

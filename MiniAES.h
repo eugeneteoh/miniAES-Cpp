@@ -36,6 +36,7 @@ uint8_t gmul(uint8_t, uint8_t);
 template<typename K, typename V>
 std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 {
+    // https://www.techiedelight.com/reverse-lookup-stl-map-cpp/
 	std::unordered_map<V,K> inverse;
 	for (const auto &p: map) {
 		inverse.insert(std::make_pair(p.second, p.first));
